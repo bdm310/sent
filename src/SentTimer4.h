@@ -17,7 +17,7 @@ class SentTimer4:public BaseSent{
             : BaseSent(tick_time, padding, sentBufferT4)
         {}
 
-        virtual void begin(SentCallback callback) override {
+        virtual void begin(SentCallback callback = nullptr) override {
             BaseSent::begin(callback);
             updateLut(F_CPU);
             TCCR4A = 0;

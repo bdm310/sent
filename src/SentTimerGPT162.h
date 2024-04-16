@@ -13,7 +13,7 @@ class SentTimerGPT162:public BaseSent{
             : BaseSent(tick_time, padding, sentBuffer)
         {}
 
-        virtual void begin(SentCallback callback) override {
+        virtual void begin(SentCallback callback = nullptr) override {
             BaseSent::begin(callback);
 
             pinMode(4, INPUT);

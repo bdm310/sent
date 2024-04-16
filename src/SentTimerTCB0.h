@@ -18,7 +18,7 @@ class SentTimerTCB0:public BaseSent{
             , _pin(pin)
         {}
 
-        virtual void begin(SentCallback callback) override {
+        virtual void begin(SentCallback callback = nullptr) override {
             BaseSent::begin(callback);
             updateLut(F_CPU);
 

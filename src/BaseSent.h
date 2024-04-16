@@ -1,8 +1,11 @@
 #pragma once
 
 #include <Arduino.h>
-
 #include "crc4.hpp"
+
+#ifndef MAX_SENT_HANDLER 
+  #define MAX_SENT_HANDLER 4
+#endif
 
 const uint8_t BUFFER_SIZE{32};
 const uint16_t LOOKUP_SIZE{256};
@@ -72,6 +75,14 @@ enum class SentError:uint8_t{
     ConfigurationError
 };
 
+class BaseSent;
+
+class ISentFrameHandler{
+    public:
+        virtual void onFrame(BaseSent*, SentFrame&) = 0;
+        virtual void onError(BaseSent*, SentError) {}
+};
+
 class BaseSent{
     public:
         BaseSent(uint8_t tick_time, bool padding, SentBuffer &buffer)
@@ -81,9 +92,23 @@ class BaseSent{
             , _frameIdx(0)
             , _padding(padding)
             , _tick_time(tick_time)
-        {}
+        {
+            for(int x = 0; x < MAX_SENT_HANDLER; x++){
+                _handler[x] = nullptr;
+            }
+        }
 
-        virtual void begin(SentCallback callback){
+        bool registerHandler(ISentFrameHandler *handler){
+            for (int x = 0; x < MAX_SENT_HANDLER; x++){
+                if(_handler[x] == nullptr){
+                    _handler[x] = handler;
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        virtual void begin(SentCallback callback = nullptr){
             _callback = callback;
         }
 
@@ -138,7 +163,7 @@ class BaseSent{
                             }
                             _frameIdx++;
                             if(_frameIdx >= 8){
-                                (*_callback)(_frame);
+                                onFrame();
                                 if(_padding){
                                     _state = State::padding;
                                 } else {
@@ -154,8 +179,26 @@ class BaseSent{
             }
         }
 
-        virtual void onError(SentError error){
-            (void) error;
+        void onError(SentError error){
+            for(int x = 0; x < MAX_SENT_HANDLER; x++){
+                if(_handler[x]){
+                    _handler[x]->onError(this, error);
+                }
+            }
+            if(_callback){
+                (*_callback)(_frame);
+            }
+        }
+
+        void onFrame(){
+            for(int x = 0; x < MAX_SENT_HANDLER; x++){
+                if(_handler[x] != nullptr){
+                    _handler[x]->onFrame(this, _frame);
+                }
+            }
+            if(_callback){
+                (*_callback)(_frame);
+            }
         }
 
     protected:
@@ -217,4 +260,5 @@ class BaseSent{
         const uint8_t _tick_offest{12};
 
         uint8_t _tick_time;
+        ISentFrameHandler* _handler[MAX_SENT_HANDLER];
 };

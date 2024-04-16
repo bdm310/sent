@@ -17,7 +17,7 @@ class SentTimer1:public BaseSent{
             : BaseSent(tick_time, padding, sentBufferT1)
         {}
 
-        virtual void begin(SentCallback callback) override {
+        virtual void begin(SentCallback callback = nullptr) override {
             BaseSent::begin(callback);
 
             // Tick_time can be between 3µs and 90µs 
