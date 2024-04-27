@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseSent.h"
+#include "sent/AVR.h"
 
 #include <Arduino.h>
 
@@ -11,17 +11,15 @@ ISR(TIMER4_CAPT_vect) {
   sentBufferT4.write(value);
 }
 
-class SentTimer4:public BaseSent{
+class SentTimer4:public AvrSent{
     public:
         SentTimer4(uint8_t tick_time = 3, bool padding = false)
-            : BaseSent(tick_time, padding, sentBufferT4)
+            : AvrSent(tick_time, padding, sentBufferT4)
         {}
 
-        virtual void begin(SentCallback callback = nullptr) override {
-            BaseSent::begin(callback);
-            updateLut(F_CPU);
+        void initTimer(uint8_t cs1x) override {
             TCCR4A = 0;
-            TCCR4B = 1;
+            TCCR4B = cs1x;
             TCCR4C = 0;
             TIMSK4 = (1 << ICIE4);
         }

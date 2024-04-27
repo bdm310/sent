@@ -2,67 +2,8 @@
 
 #include <Arduino.h>
 #include "crc4.hpp"
-
-#ifndef MAX_SENT_HANDLER 
-  #define MAX_SENT_HANDLER 4
-#endif
-
-const uint8_t BUFFER_SIZE{32};
-const uint16_t LOOKUP_SIZE{256};
-
-class SentBuffer{
-    public:
-        SentBuffer()
-            : _buffer_write_pointer(0)
-            , _buffer_read_pointer(0)
-            , _error(false)
-        {}
-
-        bool available(){
-            return _buffer_write_pointer != _buffer_read_pointer;
-        }
-
-        uint16_t read() {
-            while (!available()) {
-                // wait for data
-            }
-            uint16_t ret = _buffer[_buffer_read_pointer];
-            auto new_p = _buffer_read_pointer + 1;
-            if (new_p >= BUFFER_SIZE) {
-                new_p = 0;
-            }
-
-            _buffer_read_pointer = new_p;
-
-            return ret;
-        }
-
-        void write(uint16_t value){
-            _buffer[_buffer_write_pointer] = value;
-            _buffer_write_pointer++;
-            if (_buffer_write_pointer >= BUFFER_SIZE) {
-                _buffer_write_pointer = 0;
-            }
-            if (_buffer_write_pointer == _buffer_read_pointer) {
-                _error = true;
-            }
-        }
-
-        bool isError(){
-            return _error;
-        }
-
-        void resetError(){
-            _error = false;
-        }
-
-    private:
-        uint16_t _buffer[BUFFER_SIZE];
-        uint8_t _buffer_write_pointer;
-        uint8_t _buffer_read_pointer;
-
-        bool _error;
-};
+#include "config.h"
+#include "Buffer.h"
 
 using SentFrame = uint8_t[8];
 typedef void(*SentCallback)(SentFrame&);
@@ -113,17 +54,15 @@ class BaseSent{
         }
 
         void update(){
-            if (!_buffer.available())
-                return;
-
-            if (_buffer.isError()){
-                onError(SentError::OverflowError);
-                _buffer.resetError();
-                _lastValue = _buffer.read();
-                _state = State::sync;
-            }
-
             while(_buffer.available()){
+                if (_buffer.isError()){
+                    onError(SentError::OverflowError);
+                    _buffer.resetError();
+                    _lastValue = _buffer.read();
+                    _state = State::sync;
+                    continue;
+                }
+
                 uint16_t tmp = _buffer.read();
                 uint16_t dx = tmp - _lastValue;
                 _lastValue = tmp;
@@ -140,7 +79,7 @@ class BaseSent{
                         break;
                     case State::data:
                         dx = (dx - _cycl_offset) >> _lookup_shift;
-                        if (dx > LOOKUP_SIZE || _cycl_lookup[dx] < 0) {
+                        if (dx > LOOKUP_SIZE) {
                             onError(SentError::NibbleError);
                             _state = State::sync;
                         } else {
@@ -156,14 +95,15 @@ class BaseSent{
                             }
                             if(_frameIdx == 7){
                                 auto crcOk = _crc.finish() == nibble;
-                                if(!crcOk) {
+                                if(crcOk) {
+                                    onFrame();
+                                } else {
                                     onError(SentError::CrcError);
                                     _state = State::sync;
                                 }
                             }
                             _frameIdx++;
                             if(_frameIdx >= 8){
-                                onFrame();
                                 if(_padding){
                                     _state = State::padding;
                                 } else {
@@ -184,9 +124,6 @@ class BaseSent{
                 if(_handler[x]){
                     _handler[x]->onError(this, error);
                 }
-            }
-            if(_callback){
-                (*_callback)(_frame);
             }
         }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseSent.h"
+#include "sent/BaseSent.h"
 
 typedef void(*MLX90818Callback)(float);
 
@@ -18,7 +18,7 @@ class MLX90818:ISentFrameHandler{
 
         void onFrame(BaseSent *sender, SentFrame &frame) override {
             (void) sender;
-            
+
             uint16_t value = (frame[1] << 8) | (frame[2] << 4) | frame[3];
             float result = ((value - O1) * (P2 - P1) / (O2 - O1)) + P1;
 

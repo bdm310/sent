@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseSent.h"
+#include "sent/BaseSent.h"
 
 #include <Arduino.h>
 
@@ -18,7 +18,7 @@ class SentTimerTCB0:public BaseSent{
             , _pin(pin)
         {}
 
-        virtual void begin(SentCallback callback = nullptr) override {
+        void begin(SentCallback callback = nullptr) override {
             BaseSent::begin(callback);
             updateLut(F_CPU);
 

@@ -7,18 +7,27 @@ const auto pinSent = 5;
 SentTimerGPT sent(3, true, pinSent);
 
 void callback(SentFrame &frame) {
-  if (Serial.availableForWrite() > 15) {
-    for (int c = 0; c < 8; c++) {
-      Serial.print(frame[c], HEX);
-    }
-    Serial.println();
+  char buf[15];
+  if (Serial.availableForWrite() > sizeof(buf)) {
+    snprintf(buf, sizeof(buf)
+             , "%X%X%X%X%X%X%X%X\n"
+             , frame[0]
+             , frame[1]
+             , frame[2]
+             , frame[3]
+             , frame[4]
+             , frame[5]
+             , frame[6]
+             , frame[7]
+            );
+    Serial.print(buf);
   }
 }
 
 void setup() {
   Serial.begin(115200);
   while (!Serial) {}
-
+  Serial.println("Starting...");
   sent.begin(&callback);
 }
 

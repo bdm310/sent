@@ -1,6 +1,6 @@
 #pragma once
 
-#include "BaseSent.h"
+#include "sent/BaseSent.h"
 
 enum class SlowType{
     Short,

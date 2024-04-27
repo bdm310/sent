@@ -1,7 +1,7 @@
 #pragma once
 
-#include "FspTimer.h"
-#include "BaseSent.h"
+#include <FspTimer.h>
+#include "sent/BaseSent.h"
 
 #include <variant.h>
 
@@ -70,7 +70,7 @@ class SentTimerGPT:public BaseSent{
                 gpt->GTICASR_b.ASCAFBH = 0b1;
             } else {
                 gpt->GTICBSR_b.BSCBFAL = 0b1;
-                gpt->GTICBSR_b.BSCBRAH = 0b1;
+                gpt->GTICBSR_b.BSCBFAH = 0b1;
             }
 
             updateLut(timer.get_freq_hz());

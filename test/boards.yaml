@@ -1,0 +1,19 @@
+boards:
+  - name: nano
+    fqbn: arduino:avr:nano
+    sketch: examples/Sent328
+  - name: micro
+    fqbn: arduino:avr:leonardo
+    sketch: examples/Sent328
+  - name: nano every
+    fqbn: thinary:avr:nona4808
+    sketch: examples/Sent4808
+  - name: LGT8F328
+    fqbn: lgt8fx:avr:328
+    sketch: examples/Sent328
+  - name: "2560"
+    fqbn: arduino:avr:mega
+    sketch: examples/Sent2560
+  - name: r4 minima
+    fqbn: arduino:renesas_uno:minima
+    sketch: examples/SentRa4m1
