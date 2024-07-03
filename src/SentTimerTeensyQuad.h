@@ -11,7 +11,7 @@ const unsigned char validPins[numPins] = {
 
 const unsigned char tmrIndex[numPins] = {
     1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 4, 4, 4,
-};
+}; // These match the datasheet numbering and get decremented when used
 
 const unsigned char chnIndex[numPins] = {
     0, 1, 2, 0, 1, 2, 0, 0, 1, 1, 2, 2, 3, 0, 1, 2,
@@ -63,7 +63,10 @@ unsigned char ioSelValue[numPins] {
     0, 0, 0, 1, 1, 1, 1, 2, 0, 2, 1, 2, 1, 0, 0, 0,
 };
 
-volatile IMXRT_TMR_t *quadTimers[4] = {
+const int numTimers = 4;
+const int numTimerChannels = 4;
+
+volatile IMXRT_TMR_t *quadTimers[numTimers] = {
     (IMXRT_TMR_t *)IMXRT_TMR1_ADDRESS, 
     (IMXRT_TMR_t *)IMXRT_TMR2_ADDRESS, 
     (IMXRT_TMR_t *)IMXRT_TMR3_ADDRESS, 
@@ -75,9 +78,9 @@ void isr_tmr2();
 void isr_tmr3();
 void isr_tmr4();
 
-void (*isrFuncs[4])() = {isr_tmr1, isr_tmr2, isr_tmr3, isr_tmr4};
-IRQ_NUMBER_t irqNumbers[4] = {IRQ_QTIMER1, IRQ_QTIMER2, IRQ_QTIMER3, IRQ_QTIMER4};
-void *listeners[4][4] = {nullptr};
+void (*isrFuncs[numTimers])() = {isr_tmr1, isr_tmr2, isr_tmr3, isr_tmr4};
+IRQ_NUMBER_t irqNumbers[numTimers] = {IRQ_QTIMER1, IRQ_QTIMER2, IRQ_QTIMER3, IRQ_QTIMER4};
+void *listeners[numTimers][numTimerChannels] = {nullptr};
 
 class SentTimerTeensyQuad:public BaseSent{
     public:
@@ -87,7 +90,7 @@ class SentTimerTeensyQuad:public BaseSent{
         {}
 
         void begin(SentCallback callback = nullptr) override {
-            bool isValid;
+            bool isValid = false;
             unsigned char pinIndex;
             for(pinIndex=0; pinIndex<sizeof(validPins); pinIndex++) {
                 if(_pin == validPins[pinIndex]) {
@@ -114,7 +117,7 @@ class SentTimerTeensyQuad:public BaseSent{
             quadTimerCh->SCTRL = TMR_SCTRL_IEFIE | TMR_SCTRL_CAPTURE_MODE(2);
             quadTimer->ENBL |= 1 << chnIndex[pinIndex];
 
-            updateLut(150000000L/4L);
+            updateLut(F_BUS_ACTUAL/4L); //4 comes from TMR_CTRL_PCS above
 
             BaseSent::begin(callback);
         }
@@ -134,7 +137,7 @@ class SentTimerTeensyQuad:public BaseSent{
 };
 
 void isr_tmr(uint8_t channel) {
-    for(uint8_t i=0; i<4; i++) {
+    for(uint8_t i=0; i<numTimerChannels; i++) {
         SentTimerTeensyQuad *sentTimer = const_cast<SentTimerTeensyQuad*>(static_cast<const SentTimerTeensyQuad*>(listeners[channel][i]));
         if(sentTimer != nullptr) {
             sentTimer->doISR();
